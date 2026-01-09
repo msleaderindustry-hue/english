@@ -1,0 +1,158 @@
+:root {
+    --bg: #0f172a;
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --accent: #6366f1; /* Indigo */
+    --accent-glow: #818cf8;
+    --success: #10b981;
+    --error: #ef4444;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    /* Абстрактный фон */
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 40%);
+}
+
+#root {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Glassmorphism Card */
+.glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 30px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+    background: linear-gradient(to right, #fff, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+}
+
+/* Input Zone */
+textarea {
+    width: 100%;
+    height: 120px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: var(--text);
+    padding: 15px;
+    font-family: monospace;
+    outline: none;
+    resize: none;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+textarea:focus { border-color: var(--accent); }
+
+/* Buttons */
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent), #4f46e5);
+    color: white;
+    border: none;
+    padding: 16px;
+    width: 100%;
+    border-radius: 16px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 20px;
+    box-shadow: 0 10px 20px -10px rgba(99, 102, 241, 0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-option {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 18px;
+    width: 100%;
+    border-radius: 16px;
+    color: var(--text);
+    font-size: 1.05rem;
+    text-align: left;
+    cursor: pointer;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.btn-option:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* States */
+.btn-option.selected {
+    border-color: var(--accent);
+    background: rgba(99, 102, 241, 0.15);
+}
+.btn-option.correct {
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+}
+.btn-option.wrong {
+    border-color: var(--error);
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--error);
+}
+
+.progress-bar {
+    position: absolute;
+    top: 0; left: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-glow));
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.label-tag {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    display: block;
+    text-align: center;
+}
+
+/* Fade overlay for finished state */
+.result-score {
+    font-size: 4rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--success));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
