@@ -1,7 +1,8 @@
 const { useState, useEffect } = React;
 const { motion, AnimatePresence } = window.Motion;
 
-// Дефолтный набор
+const STORAGE_KEY = 'vocabulary_trainer_data_v1';
+
 const defaultData = [
     { "word": "Encourage", "translation": "Поощрять" },
     { "word": "Sustainable", "translation": "Устойчивый" },
@@ -10,30 +11,71 @@ const defaultData = [
     { "word": "Decision", "translation": "Решение" }
 ];
 
-// Утилита перемешивания
 const shuffle = (array) => [...array].sort(() => Math.random() - 0.5);
 
 const App = () => {
-    const [status, setStatus] = useState('setup'); // setup, quiz, result
-    const [jsonInput, setJsonInput] = useState(JSON.stringify(defaultData, null, 2));
-    const [queue, setQueue] = useState([]); // Очередь вопросов
+    const [jsonInput, setJsonInput] = useState(() => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        return saved ? saved : JSON.stringify(defaultData, null, 2);
+    });
+
+    useEffect(() => {
+        localStorage.setItem(STORAGE_KEY, jsonInput);
+    }, [jsonInput]);
+
+    const [status, setStatus] = useState('setup');
+    const [queue, setQueue] = useState([]);
     const [currentIdx, setCurrentIdx] = useState(0);
     const [score, setScore] = useState(0);
 
-    // Состояние текущего вопроса
     const [options, setOptions] = useState([]);
     const [selected, setSelected] = useState(null);
     const [isAnswered, setIsAnswered] = useState(false);
     const [isCorrect, setIsCorrect] = useState(false);
 
-    // --- ЛОГИКА ГЕНЕРАЦИИ (MIXED MODE) ---
+    // --- ЛОГИКА ОЗВУЧКИ (TTS) ---
+    const speak = (text) => {
+        if (!window.speechSynthesis) return;
+        // Прерываем предыдущую фразу, если она была
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "en-US"; // Принудительно английский
+        utterance.rate = 0.9;     // Чуть помедленнее
+        
+        // Выбираем голос (опционально, берет первый доступный английский)
+        const voices = window.speechSynthesis.getVoices();
+        const enVoice = voices.find(v => v.lang.startsWith('en'));
+        if (enVoice) utterance.voice = enVoice;
+
+        window.speechSynthesis.speak(utterance);
+    };
+
+    // Эффект для авто-озвучки при смене вопроса
+    useEffect(() => {
+        if (status === 'quiz' && queue.length > 0) {
+            const item = queue[currentIdx];
+            // Озвучиваем автоматически только если вопрос на Английском (режим direct)
+            if (item.mode === 'direct') {
+                // Небольшая задержка, чтобы анимация успела начаться
+                setTimeout(() => speak(item.word), 300);
+            }
+        }
+    }, [currentIdx, status, queue]);
+
+    const resetStorage = () => {
+        if(confirm("Сбросить слова к стандартным?")) {
+            const def = JSON.stringify(defaultData, null, 2);
+            setJsonInput(def);
+            localStorage.setItem(STORAGE_KEY, def);
+        }
+    };
+
     const startQuiz = () => {
         try {
             const rawData = JSON.parse(jsonInput);
             if (rawData.length < 4) { alert("Нужно хотя бы 4 слова!"); return; }
 
-            // 1. Создаем очередь. Для каждого слова СЛУЧАЙНО решаем:
-            // mode: 'direct' (EN->RU) или 'inverse' (RU->EN)
             const mixedQueue = shuffle(rawData).map(item => ({
                 ...item,
                 mode: Math.random() > 0.5 ? 'direct' : 'inverse'
@@ -45,19 +87,13 @@ const App = () => {
             setStatus('quiz');
             generateOptions(mixedQueue[0], rawData);
         } catch (e) {
-            alert("Ошибка JSON");
+            alert("Ошибка JSON! Проверь запятые и кавычки.");
         }
     };
 
-    // Генерация вариантов ответа
     const generateOptions = (currentItem, allData) => {
         const targetMode = currentItem.mode;
-        
-        // Правильный ответ
         const correctText = targetMode === 'direct' ? currentItem.translation : currentItem.word;
-        
-        // Список "неправильных" (дистракторы)
-        // Нам нужно отфильтровать текущее слово и взять ответы В ТОМ ЖЕ ЯЗЫКЕ, что и правильный ответ
         const pool = allData.filter(w => w.word !== currentItem.word);
         
         const distractors = pool.map(w => 
@@ -67,18 +103,16 @@ const App = () => {
         const selectedDistractors = shuffle(distractors).slice(0, 3);
         setOptions(shuffle([correctText, ...selectedDistractors]));
         
-        // Сброс
         setSelected(null);
         setIsAnswered(false);
         setIsCorrect(false);
     };
 
     const handleCheck = (option) => {
-        if (isAnswered) return; // Блокируем повторный клик
+        if (isAnswered) return;
 
         const currentItem = queue[currentIdx];
         const correctVal = currentItem.mode === 'direct' ? currentItem.translation : currentItem.word;
-        
         const correct = option === correctVal;
         
         setSelected(option);
@@ -87,7 +121,6 @@ const App = () => {
 
         if (correct) setScore(s => s + 1);
 
-        // Авто-переход с задержкой (чтобы успеть увидеть результат)
         setTimeout(() => {
             if (currentIdx < queue.length - 1) {
                 const nextIdx = currentIdx + 1;
@@ -96,33 +129,36 @@ const App = () => {
             } else {
                 setStatus('result');
             }
-        }, 1200); // 1.2 секунды задержка
+        }, 1200);
     };
 
-    // --- КОМПОНЕНТЫ ---
-
-    // 1. НАСТРОЙКА
+    // --- RENDER ---
+    
     if (status === 'setup') {
         return (
             <motion.div initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} className="glass-card">
                 <div className="title">Vocabulary Mix</div>
                 <span className="label-tag">Вставь JSON данные</span>
-                <textarea value={jsonInput} onChange={e => setJsonInput(e.target.value)} spellCheck="false" />
-                <motion.button 
-                    whileTap={{scale:0.97}} 
-                    className="btn-primary" 
-                    onClick={startQuiz}
-                >
+                <textarea 
+                    value={jsonInput} 
+                    onChange={e => setJsonInput(e.target.value)} 
+                    spellCheck="false" 
+                    placeholder='[{"word": "...", "translation": "..."}]'
+                />
+                <motion.button whileTap={{scale:0.97}} className="btn-primary" onClick={startQuiz}>
                     Начать практику
                 </motion.button>
-                <p style={{textAlign:'center', fontSize:'0.8rem', color:'rgba(255,255,255,0.3)', marginTop:'15px'}}>
-                    Смешанный режим: EN-RU и RU-EN
-                </p>
+                
+                <div style={{textAlign:'center'}}>
+                    <p style={{fontSize:'0.8rem', color:'rgba(255,255,255,0.3)', marginTop:'15px', marginBottom:'5px'}}>
+                        Слова сохраняются автоматически
+                    </p>
+                    <span className="reset-link" onClick={resetStorage}>Сбросить к стандартным</span>
+                </div>
             </motion.div>
         );
     }
 
-    // 2. РЕЗУЛЬТАТ
     if (status === 'result') {
         const percent = Math.round((score / queue.length) * 100);
         return (
@@ -142,22 +178,20 @@ const App = () => {
         );
     }
 
-    // 3. ТЕСТ (QUIZ)
     const currentItem = queue[currentIdx];
-    // Если режим direct: Спрашиваем Word -> Ждем Translation
-    // Если режим inverse: Спрашиваем Translation -> Ждем Word
+    // Определяем текст вопроса
     const questionText = currentItem.mode === 'direct' ? currentItem.word : currentItem.translation;
-    const questionLang = currentItem.mode === 'direct' ? "English" : "Russian";
+    // Определяем язык вопроса (для отображения и логики кнопки)
+    const isEnglishQuestion = currentItem.mode === 'direct';
+    
     const progress = ((currentIdx) / queue.length) * 100;
 
     return (
         <div className="glass-card">
-            {/* Progress Bar */}
             <div className="progress-bar" style={{width: `${progress}%`}}></div>
-            
             <div style={{display:'flex', justifyContent:'space-between', color: 'rgba(255,255,255,0.3)', fontSize:'0.8rem', marginBottom:'20px'}}>
                 <span>{currentIdx + 1} / {queue.length}</span>
-                <span>{questionLang} Question</span>
+                <span>{isEnglishQuestion ? "English" : "Russian"} Question</span>
             </div>
 
             <AnimatePresence mode="wait">
@@ -168,20 +202,34 @@ const App = () => {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
                 >
-                    <h2 style={{textAlign:'center', fontSize:'2.2rem', margin:'10px 0 30px', fontWeight:'500'}}>
-                        {questionText}
-                    </h2>
+                    {/* Блок с вопросом и кнопкой звука */}
+                    <div className="question-row">
+                        <h2 style={{textAlign:'center', fontSize:'2.2rem', margin:0, fontWeight:'500'}}>
+                            {questionText}
+                        </h2>
+                        
+                        {/* Показываем динамик только если это Английское слово */}
+                        {isEnglishQuestion && (
+                            <motion.button 
+                                className="speak-btn"
+                                whileTap={{scale:0.9}}
+                                onClick={() => speak(questionText)}
+                                title="Прослушать"
+                            >
+                                🔊
+                            </motion.button>
+                        )}
+                    </div>
 
                     <div>
                         {options.map((opt, i) => {
-                            // Логика цвета кнопки
                             let statusClass = '';
                             const correctVal = currentItem.mode === 'direct' ? currentItem.translation : currentItem.word;
                             
                             if (isAnswered) {
-                                if (opt === correctVal) statusClass = 'correct'; // Всегда подсвечиваем правильный
-                                else if (opt === selected && selected !== correctVal) statusClass = 'wrong'; // Если выбрали этот и он неверный
-                                else statusClass = ''; // Остальные серые
+                                if (opt === correctVal) statusClass = 'correct';
+                                else if (opt === selected && selected !== correctVal) statusClass = 'wrong';
+                                else statusClass = '';
                             }
 
                             return (
