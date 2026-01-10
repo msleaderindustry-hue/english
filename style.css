@@ -20,7 +20,6 @@ body {
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    /* Абстрактный фон */
     background-image: 
         radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
         radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 40%);
@@ -35,7 +34,6 @@ body {
     align-items: center;
 }
 
-/* Glassmorphism Card */
 .glass-card {
     background: var(--card-bg);
     backdrop-filter: blur(20px);
@@ -60,7 +58,6 @@ body {
     margin-bottom: 20px;
 }
 
-/* Input Zone */
 textarea {
     width: 100%;
     height: 120px;
@@ -77,7 +74,6 @@ textarea {
 }
 textarea:focus { border-color: var(--accent); }
 
-/* Buttons */
 .btn-primary {
     background: linear-gradient(135deg, var(--accent), #4f46e5);
     color: white;
@@ -109,25 +105,11 @@ textarea:focus { border-color: var(--accent); }
     position: relative;
 }
 
-.btn-option:hover {
-    background: rgba(255, 255, 255, 0.08);
-}
+.btn-option:hover { background: rgba(255, 255, 255, 0.08); }
 
-/* States */
-.btn-option.selected {
-    border-color: var(--accent);
-    background: rgba(99, 102, 241, 0.15);
-}
-.btn-option.correct {
-    border-color: var(--success);
-    background: rgba(16, 185, 129, 0.15);
-    color: var(--success);
-}
-.btn-option.wrong {
-    border-color: var(--error);
-    background: rgba(239, 68, 68, 0.15);
-    color: var(--error);
-}
+.btn-option.selected { border-color: var(--accent); background: rgba(99, 102, 241, 0.15); }
+.btn-option.correct { border-color: var(--success); background: rgba(16, 185, 129, 0.15); color: var(--success); }
+.btn-option.wrong { border-color: var(--error); background: rgba(239, 68, 68, 0.15); color: var(--error); }
 
 .progress-bar {
     position: absolute;
@@ -147,7 +129,6 @@ textarea:focus { border-color: var(--accent); }
     text-align: center;
 }
 
-/* Fade overlay for finished state */
 .result-score {
     font-size: 4rem;
     font-weight: 700;
@@ -155,4 +136,41 @@ textarea:focus { border-color: var(--accent); }
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin: 0;
+}
+
+.reset-link {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.2);
+    text-decoration: underline;
+    cursor: pointer;
+    margin-top: 10px;
+    display: inline-block;
+}
+
+/* Кнопка звука */
+.speak-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-left: 12px;
+    font-size: 1.1rem;
+}
+.speak-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+.question-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 30px;
+    margin-top: 10px;
 }
